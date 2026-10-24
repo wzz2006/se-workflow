@@ -1,19 +1,46 @@
-"""CLI 入口（阶段0占位：仅验证环境与参数解析）。"""
+"""CLI 入口：运行 Workflow 并打印结果"""
 import argparse
 import sys
+import json
+from core.orchestrator import Orchestrator
 
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="SE Workflow: 需求分析 -> 代码设计 -> 代码审查")
-    p.add_argument("-i", "--input", default="examples/input_sample.txt")
-    p.add_argument("--mock", action="store_true", help="使用 Mock Agent，不调用 LLM")
+    p.add_argument("-i", "--input", default="examples/input_sample.txt", help="需求文本文件路径")
     return p
 
 
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
-    print(f"[stage0] input={args.input}, mock={args.mock}")
-    print("[stage0] 环境就绪，等待阶段1实现 Orchestrator。")
+    
+    # 1. 读取输入
+    try:
+        with open(args.input, "r", encoding="utf-8") as f:
+            raw_input = f.read()
+    except FileNotFoundError:
+        print(f"找不到输入文件: {args.input}")
+        return 1
+
+    # 2. 运行工作流
+    orchestrator = Orchestrator(max_retry=2)
+    state = orchestrator.run(raw_input)
+
+    # 3. 打印追踪日志
+    print("\n========== 执行日志 ==========")
+    for log in state.logs:
+        print(log)
+        
+    # 4. 打印最终的结构化状态 (JSON格式)
+    print("\n========== 最终状态 (JSON) ==========")
+    print(json.dumps({
+        "requirements": state.requirements,
+        "design": state.design,
+        "review": state.review,
+        "errors": state.errors,
+        "retry_count": state.retry_count
+    }, ensure_ascii=False, indent=2))
+
     return 0
 
 
