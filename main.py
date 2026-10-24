@@ -23,7 +23,7 @@ def main(argv=None) -> int:
         return 1
 
     # 2. 运行工作流
-    orchestrator = Orchestrator(max_retry=2)
+    orchestrator = Orchestrator()
     state = orchestrator.run(raw_input)
 
     # 3. 打印追踪日志
