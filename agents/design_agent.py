@@ -1,36 +1,30 @@
 from core.state import WorkflowState
 from agents.base import BaseAgent
+from tools.llm import call_llm
+from tools.json_parser import extract_json
+from prompts.design_prompt import SYSTEM_PROMPT
+import json
 
 class DesignAgent(BaseAgent):
     name = "DesignAgent"
 
     def run(self, state: WorkflowState) -> WorkflowState:
-        if not state.requirements.get("features"):
+        if not state.requirements:
             state.errors.append("无需求可设计")
             return state
 
-        features = state.requirements["features"]
-        modules = []
+        # 把需求转成字符串发给 LLM
+        user_prompt = f"需求如下：\n{json.dumps(state.requirements, ensure_ascii=False)}\n"
         
-        # Mock 逻辑：如果是第一次设计且功能点大于2个，故意漏掉 interface，让审查去挑刺
-        # 这样编排器就能触发重试流程
-        is_first_try = state.retry_count == 0
-        
-        for i, feat in enumerate(features):
-            mod = {
-                "name": f"Module_{i+1}",
-                "responsibility": f"实现：{feat}"
-            }
-            if len(features) <= 2 or not is_first_try:
-                mod["interface"] = f"def func_{i+1}(): pass"
-            
-            modules.append(mod)
+        # 如果之前审查没通过，把审查意见带上，让它修改
+        if state.review and not state.review.get("passed"):
+            user_prompt += f"\n上一版设计存在以下问题，请修复：\n{state.review.get('issues')}"
 
-        state.design = {
-            "modules": modules,
-            "data_flow": "输入 -> 处理 -> 输出",
-            "pseudocode": "// 伪代码省略"
-        }
-        
-        state.emit(self.name, "ReviewAgent", f"产出 {len(modules)} 个模块设计 (重试次数: {state.retry_count})")
+        try:
+            raw_response = call_llm(SYSTEM_PROMPT, user_prompt)
+            state.design = extract_json(raw_response)
+            state.emit(self.name, "ReviewAgent", f"LLM 产出 {len(state.design.get('modules', []))} 个模块设计 (重试次数: {state.retry_count})")
+        except Exception as e:
+            state.errors.append(f"代码设计失败: {str(e)}")
+
         return state

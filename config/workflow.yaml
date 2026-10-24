@@ -1,6 +1,8 @@
+# 全局设置
 max_retry: 2
 enable_codegen: false
 
+# 节点定义
 nodes:
   - id: req
     agent: RequirementAgent
@@ -11,8 +13,8 @@ nodes:
   - id: review
     agent: ReviewAgent
     next: END
-    on_fail: design
+    on_fail: design        # 如果审查未通过，回退到 design
   - id: codegen
     agent: CodeGenAgent
-    enabled: false
+    enabled: false         # 预留节点，默认关闭
     next: END

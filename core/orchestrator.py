@@ -25,11 +25,20 @@ class Orchestrator:
 
         # 2. 设计 -> 审查（带循环回退）
         while True:
+            print(f"--> 正在请求 LLM 进行设计 (重试次数: {state.retry_count})...")
+            
             # 执行设计
             state = self.agents["design"].run(state)
-            
+            if state.errors: # 如果 LLM 调用失败
+                state.logs.append("设计阶段发生错误，终止流程")
+                break
+
             # 执行审查
+            print("--> 正在请求 LLM 进行审查...")
             state = self.agents["review"].run(state)
+            if state.errors: # 如果 LLM 调用失败
+                state.logs.append("审查阶段发生错误，终止流程")
+                break
             
             # 检查是否通过
             if state.review.get("passed"):
