@@ -1,0 +1,18 @@
+max_retry: 2
+enable_codegen: false
+
+nodes:
+  - id: req
+    agent: RequirementAgent
+    next: design
+  - id: design
+    agent: DesignAgent
+    next: review
+  - id: review
+    agent: ReviewAgent
+    next: END
+    on_fail: design
+  - id: codegen
+    agent: CodeGenAgent
+    enabled: false
+    next: END
