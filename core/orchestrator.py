@@ -3,7 +3,8 @@ from core.state import WorkflowState
 from agents.requirement_agent import RequirementAgent
 from agents.design_agent import DesignAgent
 from agents.review_agent import ReviewAgent
-# 注意：阶段 4 稍后会在这里引入 CodeGenAgent
+
+from agents.codegen_agent import CodeGenAgent
 
 class Orchestrator:
     def __init__(self, config_path="config/workflow.yaml"):
@@ -18,6 +19,7 @@ class Orchestrator:
             "RequirementAgent": RequirementAgent(),
             "DesignAgent": DesignAgent(),
             "ReviewAgent": ReviewAgent(),
+            "CodeGenAgent": CodeGenAgent(),
         }
 
     def run(self, raw_input: str) -> WorkflowState:

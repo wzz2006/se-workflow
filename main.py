@@ -3,6 +3,7 @@ import argparse
 import sys
 import json
 from core.orchestrator import Orchestrator
+from tools.printer import print_pretty
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -37,9 +38,15 @@ def main(argv=None) -> int:
         "requirements": state.requirements,
         "design": state.design,
         "review": state.review,
+        "code": state.code.get("content", "未执行代码生成"),
         "errors": state.errors,
         "retry_count": state.retry_count
     }, ensure_ascii=False, indent=2))
+    
+    # 5. 打印并保存生成的代码
+    if state.code:
+        # 调用美化打印函数
+        print_pretty(state.code)
 
     return 0
 
